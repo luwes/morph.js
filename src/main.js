@@ -18,11 +18,14 @@ Morph.support = {
 function Morph(el) {
 	if (!(this instanceof Morph)) return new Morph(el);
 	this.el = _.query(el) || el;
-
+	this.events = {
+		update: new Signal(),
+		end: new Signal()
+	};
 	if (Morph.support.transition) {
-		this.engine = new V8(this.el);
+		this.engine = new V8(this);
 	} else {
-		this.engine = new V6(this.el);
+		this.engine = new V6(this);
 	}
 	this.duration(Morph.defaults.duration);
 }
@@ -44,6 +47,16 @@ Morph.prototype.to = function(prop, val) {
 
 Morph.prototype.start = function() {
 	this.engine.start();
+	return this;
+};
+
+Morph.prototype.on = function(event, fn) {
+	this.events[event].on(fn);
+	return this;
+};
+
+Morph.prototype.off = function(event, fn) {
+	this.events[event].off(fn);
 	return this;
 };
 

@@ -8,6 +8,10 @@ var _ = {
 		return src;
 	},
 
+	bind: function(fn, context) {
+		return function() { fn.apply(context, [].slice.call(arguments)); };
+	},
+
 	contains: function(list, el) {
 		for (var key in list) {
 			if (list[key] === el) return true;
@@ -39,6 +43,28 @@ var _ = {
 		style[transform] = '';
 		style[transform] = 'rotateY(90deg)';
 		return style[transform] !== '';
+	},
+
+	on: function(el, type, fn) {
+		var arr = type.split(' ');
+		for (var i = 0; i < arr.length; i++) {
+			if (el.attachEvent) {
+				el.attachEvent('on' + arr[i], fn);
+			} else {
+				el.addEventListener(arr[i], fn, false);
+			}
+		}
+	},
+
+	off: function(el, type, fn) {
+		var arr = type.split(' ');
+		for (var i = 0; i < arr.length; i++) {
+			if (el.detachEvent) {
+				el.detachEvent('on' + arr[i], fn);
+			} else {
+				el.removeEventListener(arr[i], fn, false);
+			}
+		}
 	},
 
 	camel: function(str) {
@@ -86,11 +112,14 @@ Morph.support = {
 function Morph(el) {
 	if (!(this instanceof Morph)) return new Morph(el);
 	this.el = _.query(el) || el;
-
+	this.events = {
+		update: new Signal(),
+		end: new Signal()
+	};
 	if (Morph.support.transition) {
-		this.engine = new V8(this.el);
+		this.engine = new V8(this);
 	} else {
-		this.engine = new V6(this.el);
+		this.engine = new V6(this);
 	}
 	this.duration(Morph.defaults.duration);
 }
@@ -115,7 +144,49 @@ Morph.prototype.start = function() {
 	return this;
 };
 
+Morph.prototype.on = function(event, fn) {
+	this.events[event].on(fn);
+	return this;
+};
+
+Morph.prototype.off = function(event, fn) {
+	this.events[event].off(fn);
+	return this;
+};
+
 window.Morph = Morph;
+
+
+function Signal() {
+	this.c = [];
+}
+
+Signal.prototype.on = function(fn, c) {
+	this.c.push({fn: fn, c: c});
+	return this;
+};
+
+Signal.prototype.fire = function() {
+	var args = [].slice.call(arguments);
+	for (var i = 0; i < this.c.length; i++) {
+		this.c[i].fn.apply(this.c[i].c || this, args);
+	}
+	return this;
+};
+
+Signal.prototype.off = function(fn) {
+	if (fn) {
+		for (var i = 0; i < this.c.length; i++) {
+			if (this.c[i] === fn) {
+				this.c.splice(i, 1);
+				i--;
+			}
+		}
+	} else {
+		this.c = [];
+	}
+	return this;
+};
 
 
 V6.aliases = {
@@ -123,8 +194,9 @@ V6.aliases = {
 	y: 'top'
 };
 
-function V6(el) {
-	this.el = el;
+function V6(main) {
+	this.main = main;
+	this.el = main.el;
 	this._start = {};
 	this._end = {};
 }
@@ -144,10 +216,10 @@ V6.prototype.to = function(obj, val) {
 
 V6.prototype.add = function(obj, val) {
 	var map = {};
-	if (val) map[obj] = val;
+	if (val !== undefined) map[obj] = val;
 	else _.extend(map, obj);
 	for (var alias in V6.aliases) {
-		if (map[alias]) {
+		if (map[alias] !== undefined) {
 			map[V6.aliases[alias]] = map[alias];
 			delete map[alias];
 		}
@@ -179,7 +251,7 @@ V6.prototype.applyProperties = function(ratio) {
 };
 
 V6.prototype.start = function() {
-	this.stop();
+	this.reset();
 	this.initProperties();
 
 	var _this = this;
@@ -190,30 +262,44 @@ V6.prototype.start = function() {
 		ratio = ratio > 1 ? 1 : ratio;
 		last = +new Date();
 		_this.applyProperties(ratio);
-		if (ratio === 1) _this.stop();
+		_this.main.events.update.fire();
+		if (ratio === 1) _this.end();
 	};
 	this.id = setInterval(tick, 16);
 };
 
-V6.prototype.stop = function() {
+V6.prototype.end = function() {
 	clearInterval(this.id);
-	this.reset();
+	this.main.events.end.fire();
 };
 
 V6.prototype.reset = function() {
+	clearInterval(this.id);
 	this._start = {};
 };
 
 
 V8.translate = _.has3d ? ['translate3d(',', 0)'] : ['translate(',')'];
 
+V8.ends = [
+	'transitionend',
+	'webkitTransitionEnd',
+	'oTransitionEnd',
+	'MSTransitionEnd'
+];
+
 V8.aliases = {
 	x: function(v) { return ['#tx', V8.translate.join(v + ', 0')]; },
 	y: function(v) { return ['#ty', V8.translate.join('0, ' + v)]; }
 };
 
-function V8(el) {
-	this.el = el;
+function V8(main) {
+	this.main = main;
+	this.el = main.el;
+
+	this._update = _.bind(this.update, this);
+	this._end = _.bind(this.end, this);
+
 	this.reset();
 }
 
@@ -256,10 +342,10 @@ V8.prototype.to = function(obj, val) {
 
 V8.prototype.add = function(obj, val) {
 	var map = {};
-	if (val) map[obj] = val;
+	if (val !== undefined) map[obj] = val;
 	else _.extend(map, obj);
 	for (var alias in V8.aliases) {
-		if (map[alias]) {
+		if (map[alias] !== undefined) {
 			var value = _.addUnit(map[alias]);
 			var result = V8.aliases[alias](value);
 			map[result[0]] = result[1];
@@ -285,7 +371,6 @@ V8.prototype.applyProperties = function(map) {
 	for (var prop in map) {
 		this.el.style.setProperty(prop, map[prop]);
 	}
-	var forceRepaint = this.el.offsetHeight;
 };
 
 V8.prototype.start = function() {
@@ -297,8 +382,24 @@ V8.prototype.start = function() {
 	if (this._duration > 0) {
 		this.setVendorProperty('transition-duration', this._duration + 'ms');
 		this.setVendorProperty('transition-property', this._transitionProps.join(', '));
+		this.id = setInterval(this._update, 16);
+		this.fired = false;
+		_.on(this.el, V8.ends.join(' '), this._end);
 	}
 	this.applyProperties(this._props);
 	this.reset();
+};
+
+V8.prototype.update = function() {
+	this.main.events.update.fire();
+};
+
+V8.prototype.end = function() {
+	_.off(this.el, V8.ends.join(' '), this._end);
+	clearInterval(this.id);
+	if (!this.fired) {
+		this.fired = true;
+		this.main.events.end.fire();
+	}
 };
 })(window, document);

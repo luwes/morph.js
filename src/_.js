@@ -8,6 +8,10 @@ var _ = {
 		return src;
 	},
 
+	bind: function(fn, context) {
+		return function() { fn.apply(context, [].slice.call(arguments)); };
+	},
+
 	contains: function(list, el) {
 		for (var key in list) {
 			if (list[key] === el) return true;
@@ -39,6 +43,28 @@ var _ = {
 		style[transform] = '';
 		style[transform] = 'rotateY(90deg)';
 		return style[transform] !== '';
+	},
+
+	on: function(el, type, fn) {
+		var arr = type.split(' ');
+		for (var i = 0; i < arr.length; i++) {
+			if (el.attachEvent) {
+				el.attachEvent('on' + arr[i], fn);
+			} else {
+				el.addEventListener(arr[i], fn, false);
+			}
+		}
+	},
+
+	off: function(el, type, fn) {
+		var arr = type.split(' ');
+		for (var i = 0; i < arr.length; i++) {
+			if (el.detachEvent) {
+				el.detachEvent('on' + arr[i], fn);
+			} else {
+				el.removeEventListener(arr[i], fn, false);
+			}
+		}
 	},
 
 	camel: function(str) {

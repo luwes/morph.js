@@ -4,8 +4,9 @@ V6.aliases = {
 	y: 'top'
 };
 
-function V6(el) {
-	this.el = el;
+function V6(main) {
+	this.main = main;
+	this.el = main.el;
 	this._start = {};
 	this._end = {};
 }
@@ -25,10 +26,10 @@ V6.prototype.to = function(obj, val) {
 
 V6.prototype.add = function(obj, val) {
 	var map = {};
-	if (val) map[obj] = val;
+	if (val !== undefined) map[obj] = val;
 	else _.extend(map, obj);
 	for (var alias in V6.aliases) {
-		if (map[alias]) {
+		if (map[alias] !== undefined) {
 			map[V6.aliases[alias]] = map[alias];
 			delete map[alias];
 		}
@@ -60,7 +61,7 @@ V6.prototype.applyProperties = function(ratio) {
 };
 
 V6.prototype.start = function() {
-	this.stop();
+	this.reset();
 	this.initProperties();
 
 	var _this = this;
@@ -71,16 +72,18 @@ V6.prototype.start = function() {
 		ratio = ratio > 1 ? 1 : ratio;
 		last = +new Date();
 		_this.applyProperties(ratio);
-		if (ratio === 1) _this.stop();
+		_this.main.events.update.fire();
+		if (ratio === 1) _this.end();
 	};
 	this.id = setInterval(tick, 16);
 };
 
-V6.prototype.stop = function() {
+V6.prototype.end = function() {
 	clearInterval(this.id);
-	this.reset();
+	this.main.events.end.fire();
 };
 
 V6.prototype.reset = function() {
+	clearInterval(this.id);
 	this._start = {};
 };

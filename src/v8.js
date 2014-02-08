@@ -1,13 +1,25 @@
 
 V8.translate = _.has3d ? ['translate3d(',', 0)'] : ['translate(',')'];
 
+V8.ends = [
+	'transitionend',
+	'webkitTransitionEnd',
+	'oTransitionEnd',
+	'MSTransitionEnd'
+];
+
 V8.aliases = {
 	x: function(v) { return ['#tx', V8.translate.join(v + ', 0')]; },
 	y: function(v) { return ['#ty', V8.translate.join('0, ' + v)]; }
 };
 
-function V8(el) {
-	this.el = el;
+function V8(main) {
+	this.main = main;
+	this.el = main.el;
+
+	this._update = _.bind(this.update, this);
+	this._end = _.bind(this.end, this);
+
 	this.reset();
 }
 
@@ -50,10 +62,10 @@ V8.prototype.to = function(obj, val) {
 
 V8.prototype.add = function(obj, val) {
 	var map = {};
-	if (val) map[obj] = val;
+	if (val !== undefined) map[obj] = val;
 	else _.extend(map, obj);
 	for (var alias in V8.aliases) {
-		if (map[alias]) {
+		if (map[alias] !== undefined) {
 			var value = _.addUnit(map[alias]);
 			var result = V8.aliases[alias](value);
 			map[result[0]] = result[1];
@@ -79,7 +91,6 @@ V8.prototype.applyProperties = function(map) {
 	for (var prop in map) {
 		this.el.style.setProperty(prop, map[prop]);
 	}
-	var forceRepaint = this.el.offsetHeight;
 };
 
 V8.prototype.start = function() {
@@ -91,7 +102,23 @@ V8.prototype.start = function() {
 	if (this._duration > 0) {
 		this.setVendorProperty('transition-duration', this._duration + 'ms');
 		this.setVendorProperty('transition-property', this._transitionProps.join(', '));
+		this.id = setInterval(this._update, 16);
+		this.fired = false;
+		_.on(this.el, V8.ends.join(' '), this._end);
 	}
 	this.applyProperties(this._props);
 	this.reset();
+};
+
+V8.prototype.update = function() {
+	this.main.events.update.fire();
+};
+
+V8.prototype.end = function() {
+	_.off(this.el, V8.ends.join(' '), this._end);
+	clearInterval(this.id);
+	if (!this.fired) {
+		this.fired = true;
+		this.main.events.end.fire();
+	}
 };
