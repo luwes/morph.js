@@ -45,6 +45,7 @@ V8.prototype.css = function(obj, val) {
 	this.duration(0);
 	this.to(obj, val);
 	this.start();
+	this.update();
 };
 
 V8.prototype.to = function(obj, val) {

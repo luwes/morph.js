@@ -24,23 +24,22 @@
 	<script>
 
 		var x = 0;
-		var m = Morph('.morphable');
+		var m = Morph('.morphable')
+			.on('update', function() {
+				console.log('updating')
+			})
+			.on('end', function() {
+				console.log('ended')
+			});
 
 		function play(e) {
 
 			x += 100;
-
 			m
-				//.css({ x: 30 })
+				//.css({ x: x })
 				.duration(300)
 				.to({ x: x, y: x })
 				.to('opacity', '0.5')
-				.on('update', function() {
-					console.log('updating')
-				})
-				.on('end', function() {
-					console.log('ended')
-				})
 				.start();
 		}
 

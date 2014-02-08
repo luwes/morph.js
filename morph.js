@@ -208,6 +208,8 @@ V6.prototype.duration = function(dur) {
 V6.prototype.css = function(obj, val) {
 	_.extend(this._start, this.add(obj, val));
 	this.setProperties();
+	this.update();
+
 };
 
 V6.prototype.to = function(obj, val) {
@@ -262,10 +264,14 @@ V6.prototype.start = function() {
 		ratio = ratio > 1 ? 1 : ratio;
 		last = +new Date();
 		_this.applyProperties(ratio);
-		_this.main.events.update.fire();
+		_this.update();
 		if (ratio === 1) _this.end();
 	};
 	this.id = setInterval(tick, 16);
+};
+
+V6.prototype.update = function() {
+	this.main.events.update.fire();
 };
 
 V6.prototype.end = function() {
@@ -325,6 +331,7 @@ V8.prototype.css = function(obj, val) {
 	this.duration(0);
 	this.to(obj, val);
 	this.start();
+	this.update();
 };
 
 V8.prototype.to = function(obj, val) {
