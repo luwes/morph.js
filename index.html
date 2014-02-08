@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Morph.js</title>
+	<style type="text/css">
+
+		body {
+			position: relative;
+		}
+
+		.morphable {
+			position: absolute;
+			display: block;
+			width: 100px;
+			height: 100px;
+			background-color: red;
+		}
+
+	</style>
+</head>
+<body>
+	<div class="morphable"></div>
+	<script src="morph.js"></script>
+	<script>
+
+		var x = 0;
+		var m = Morph('.morphable');
+
+		function play(e) {
+
+			x += 100;
+
+			m
+				.css({ x: 30 })
+				.duration(300)
+				.to({ x: x, y: x })
+				.to('opacity', '0.5')
+				.start();
+		}
+
+		document.addEventListener('click', play);
+		document.addEventListener('touchstart', play);
+
+	</script>
+</body>
+</html>
