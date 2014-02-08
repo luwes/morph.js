@@ -8,7 +8,7 @@ A lightweight CSS transition library
     <script>
   	  Morph('.morphable')
   		  .duration(300)
-  		  .to({ x: x, y: x })
+  		  .to({ x: 100, y: 10 })
   		  .to('opacity', '0.5')
   		  .start();
     </script>
