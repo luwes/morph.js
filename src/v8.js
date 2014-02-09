@@ -9,8 +9,14 @@ V8.ends = [
 ];
 
 V8.aliases = {
-	x: function(v) { return ['#tx', V8.translate.join(v + ', 0')]; },
-	y: function(v) { return ['#ty', V8.translate.join('0, ' + v)]; }
+	x: {
+		set: function(map, v) { map.transformX = V8.translate.join(v + ', 0'); },
+		get: function(el, prop) { return _.matrix(_.style(el, _.vendorPropName('transform'))).x; }
+	},
+	y: {
+		set: function(map, v) { map.transformY = V8.translate.join('0, ' + v); },
+		get: function(el, prop) { return _.matrix(_.style(el, _.vendorPropName('transform'))).y; }
+	}
 };
 
 function V8(main) {
@@ -41,7 +47,12 @@ V8.prototype.setProperty = function(prop, val) {
 	this._props[prop] = val;
 };
 
-V8.prototype.css = function(obj, val) {
+V8.prototype.get = function(prop) {
+	if (V8.aliases[prop]) return V8.aliases[prop].get(this.el, prop);
+	return _.style(this.el, _.vendorPropName(prop));
+};
+
+V8.prototype.set = function(obj, val) {
 	this.duration(0);
 	this.to(obj, val);
 	this.start();
@@ -51,7 +62,7 @@ V8.prototype.css = function(obj, val) {
 V8.prototype.to = function(obj, val) {
 	var adds = this.add(obj, val);
 	for (var prop in adds) {
-		if (prop.match(/^#/)) {
+		if (prop.match(/^transform/)) {
 			this.transform(adds[prop]);
 			delete adds[prop];
 		} else {
@@ -68,8 +79,7 @@ V8.prototype.add = function(obj, val) {
 	for (var alias in V8.aliases) {
 		if (map[alias] !== undefined) {
 			var value = _.addUnit(map[alias]);
-			var result = V8.aliases[alias](value);
-			map[result[0]] = result[1];
+			V8.aliases[alias].set(map, value);
 			delete map[alias];
 		}
 	}

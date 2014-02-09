@@ -15,11 +15,15 @@ V6.prototype.duration = function(dur) {
 	this._duration = dur;
 };
 
-V6.prototype.css = function(obj, val) {
+V6.prototype.get = function(prop) {
+	prop = V6.aliases[prop] || prop;
+	return _.style(this.el, prop);
+};
+
+V6.prototype.set = function(obj, val) {
 	_.extend(this._start, this.add(obj, val));
 	this.setProperties();
 	this.update();
-
 };
 
 V6.prototype.to = function(obj, val) {
@@ -48,7 +52,7 @@ V6.prototype.setProperties = function() {
 V6.prototype.initProperties = function() {
 	for (var prop in this._end) {
 		if (!this._start[prop]) {
-			this._start[prop] = this.el.style[_.camel(prop)] || 1;
+			this._start[prop] = _.style(this.el, prop) || 1;
 		}
 	}
 };
@@ -57,7 +61,7 @@ V6.prototype.applyProperties = function(ratio) {
 	for (var prop in this._end) {
 		var start = this._start[prop];
 		var end = this._end[prop];
-		var calc = _.lerp(ratio, parseFloat(start), parseFloat(end));
+		var calc = _.lerp(ratio, _.num(start), _.num(end));
 		this.el.style[_.camel(prop)] = calc + _.getUnit(end);
 	}
 };

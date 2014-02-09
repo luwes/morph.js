@@ -1,4 +1,6 @@
 
+var divstyle = document.createElement('div').style;
+
 var _ = {
 
 	extend: function(src, dest) {
@@ -10,6 +12,23 @@ var _ = {
 
 	bind: function(fn, context) {
 		return function() { fn.apply(context, [].slice.call(arguments)); };
+	},
+
+	style: function(el, prop) {
+		if (window.getComputedStyle) {
+			return getComputedStyle(el).getPropertyValue(_.uncamel(prop));
+		} else if (el.currentStyle) {
+			return el.currentStyle[_.camel(prop)];
+		} else return el.style[_.camel(prop)];
+	},
+
+	matrix: function(str) {
+		var arr = str.match(/\(([-\d., ]+?)\)/)[1].split(', ');
+		if (arr.length == 6) {
+			return { x: arr[4], y: arr[5] };
+		} else if (arr.length == 16) {
+			return { x: arr[12], y: arr[13] };
+		}
 	},
 
 	contains: function(list, el) {
@@ -26,23 +45,21 @@ var _ = {
 	},
 
 	vendorPropName: function(name) {
-		var style = document.createElement('div').style;
-		if (name in style) return name;
+		if (name in divstyle) return name;
 
 		var camel = _.camel('-' + name);
 		var prefixes = ['Moz', 'Webkit', 'O', 'ms'];
 		for (var i = 0; i < prefixes.length; i++) {
 			name = prefixes[i] + camel;
-			if (name in style) return name;
+			if (name in divstyle) return name;
 		}
 	},
 
 	has3d: function() {
-		var style = document.createElement('div').style;
 		var transform = _.vendorPropName('transform');
-		style[transform] = '';
-		style[transform] = 'rotateY(90deg)';
-		return style[transform] !== '';
+		divstyle[transform] = '';
+		divstyle[transform] = 'rotateY(90deg)';
+		return divstyle[transform] !== '';
 	},
 
 	on: function(el, type, fn) {
@@ -68,15 +85,13 @@ var _ = {
 	},
 
 	camel: function(str) {
-		return str.replace(/-(\w)/g, function(match, c) {
+		return (''+str).replace(/-(\w)/g, function(match, c) {
 			return c.toUpperCase();
 		});
 	},
 
 	uncamel: function(str) {
-		return str.replace(/([A-Z])/g, function(letter) {
-			return '-' + letter.toLowerCase();
-		});
+		return (''+str).replace(/([A-Z])/g, '-$1').toLowerCase();
 	},
 
 	addUnit: function(v) {
@@ -84,7 +99,11 @@ var _ = {
 	},
 
 	getUnit: function(v) {
-		return typeof v == 'string' ? v.replace(/[\d\.]/g, '') : 'px';
+		return typeof v == 'string' ? v.replace(/[-\d\.]/g, '') : 'px';
+	},
+
+	num: function(n) {
+		return +(''+n).replace(/[^-\d.]/g, '');
 	},
 
 	lerp: function(ratio, start, end) {

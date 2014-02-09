@@ -14,6 +14,7 @@
 			width: 100px;
 			height: 100px;
 			background-color: red;
+			left: 20px;
 		}
 
 	</style>
@@ -24,12 +25,15 @@
 	<script>
 
 		var x = 0;
-		var m = Morph('.morphable')
+		var m = Morph('.morphable');
+		m
 			.on('update', function() {
-				console.log('updating')
+				console.log('updating');
+				console.log(m.get('x'));
 			})
 			.on('end', function() {
-				console.log('ended')
+				console.log('ended');
+				console.log(m.get('x'));
 			});
 
 		function play(e) {
@@ -38,7 +42,7 @@
 			m
 				//.css({ x: x })
 				.duration(300)
-				.to({ x: x, y: x })
+				.to({ x: x, y: -20 })
 				.to('opacity', '0.5')
 				.start();
 		}
