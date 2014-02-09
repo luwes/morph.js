@@ -49,6 +49,11 @@ Morph.prototype.to = function(prop, val) {
 	return this;
 };
 
+Morph.prototype.ease = function(fn) {
+	this.engine.ease(fn);
+	return this;
+};
+
 Morph.prototype.start = function() {
 	this.engine.start();
 	return this;

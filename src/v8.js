@@ -33,10 +33,15 @@ V8.prototype.reset = function() {
 	this._props = {};
 	this._transitionProps = [];
 	this._transforms = [];
+	this._ease = '';
 };
 
 V8.prototype.duration = function(n) {
 	this._duration = n;
+};
+
+V8.prototype.ease = function(fn) {
+	this._ease = fn;
 };
 
 V8.prototype.setVendorProperty = function(prop, val) {
@@ -110,13 +115,20 @@ V8.prototype.start = function() {
 		this.setVendorProperty('transform', this._transforms.join(' '));
 		this.transition(_.uncamel(Morph.support.transform));
 	}
+
+	this.setVendorProperty('transition', '');
 	if (this._duration > 0) {
 		this.setVendorProperty('transition-duration', this._duration + 'ms');
 		this.setVendorProperty('transition-property', this._transitionProps.join(', '));
+		this.setVendorProperty('transition-timing-function', this._ease);
+
+		clearInterval(this.id);
 		this.id = setInterval(this._update, 16);
 		this.fired = false;
+		
 		_.on(this.el, V8.ends.join(' '), this._end);
 	}
+
 	this.applyProperties(this._props);
 	this.reset();
 };

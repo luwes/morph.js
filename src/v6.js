@@ -66,6 +66,10 @@ V6.prototype.applyProperties = function(ratio) {
 	}
 };
 
+V6.prototype.ease = function(fn) {
+	
+};
+
 V6.prototype.start = function() {
 	this.reset();
 	this.initProperties();
