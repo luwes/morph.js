@@ -35,13 +35,13 @@ Morph.prototype.duration = function(dur) {
 	return this;
 };
 
+Morph.prototype.get = function(prop) {
+	return this.engine.get(prop);
+};
+
 Morph.prototype.set = function(obj, val) {
 	this.engine.set(obj, val);
 	return this;
-};
-
-Morph.prototype.get = function(prop) {
-	return this.engine.get(prop);
 };
 
 Morph.prototype.to = function(prop, val) {
