@@ -28,8 +28,8 @@
 		var m = Morph('.morphable');
 		m
 			.on('update', function() {
-				console.log('updating');
-				console.log(m.get('x'));
+				//console.log('updating');
+				//console.log(m.get('x'));
 			})
 			.on('end', function() {
 				console.log('ended');
@@ -40,11 +40,11 @@
 
 			x += 100;
 			m
-				//.set({ x: x })
-				.duration(300)
-				.to({ x: x, y: -20 })
-				.to('opacity', '0.5')
-				.start();
+				.set({ x: x })
+				// .duration(600)
+				// .to({ x: x, y: -20 })
+				// .to('opacity', '0.5')
+				// .start();
 		}
 
 		document.addEventListener('click', play);
